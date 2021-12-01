@@ -1,5 +1,7 @@
 package com.example.playgroundmanager.domain;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
@@ -47,6 +49,28 @@ public class Kid {
 
     public Set<Ticket> getTickets() {
         return tickets;
+    }
+
+    public Set<Ticket> getValidTickets(LocalDateTime time) {
+        Set<Ticket> allTickets = this.getTickets();
+        Set<Ticket> validTickets = new HashSet<>();
+        for (Ticket ticket : allTickets) {
+            if (ticket.isValidAt(time)) {
+                validTickets.add(ticket);
+            }
+        }
+        return validTickets;
+    }
+
+    public Set<Ticket> getValidVipTickets(LocalDateTime time) {
+        Set<Ticket> validTickets = this.getValidTickets(time);
+        Set<Ticket> vipTickets = new HashSet<>();
+        for (Ticket ticket : validTickets) {
+            if (ticket.getNumberOfTimesVIP() > 0) {
+                vipTickets.add(ticket);
+            }
+        }
+        return vipTickets;
     }
 
     public void setTickets(Set<Ticket> tickets) {

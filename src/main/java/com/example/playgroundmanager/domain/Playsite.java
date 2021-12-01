@@ -1,7 +1,10 @@
 package com.example.playgroundmanager.domain;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class Playsite {
 
@@ -12,6 +15,9 @@ public class Playsite {
     private Integer currentKidCount;
     private Queue<Kid> mainQueue = new LinkedList<>();
     private Queue<Kid> vipQueue = new LinkedList<>();
+    private Integer nonVipCounter = 0;
+    private final Integer nonVipThreshold = 3;
+    private Boolean letVip = true;
     Set<KidInPlaysite> kidInPlaysite = new HashSet<>();
 
     public Playsite() {
@@ -81,7 +87,12 @@ public class Playsite {
         this.kidInPlaysite = kidInPlaysite;
     }
 
-    public void attendBy(Kid kid){
+    public void attendBy(Kid kid) throws InterruptedException { // TODO: different times can be used!!!
+        if (kid.getValidTickets(LocalDateTime.now()).size() == 0) {
+            System.out.println(kid.getFirstName() + " has no valid ticket so won't be let in playsite " + this.type);
+            return;
+        }
+        TimeUnit.SECONDS.sleep(1); //TODO fix this to remove wait?
         if (this.currentKidCount < this.maxAllowedKidCount) {
             KidInPlaysite kidInPlaysite = new KidInPlaysite();
             kidInPlaysite.setKid(kid);
@@ -91,7 +102,13 @@ public class Playsite {
             kidInPlaysite.setStartTime(LocalDateTime.now());
             this.currentKidCount += 1;
         } else {
-            this.addKidToMainQueue(kid);
+            if (kid.getCanWait()) {
+                if (kid.getValidVipTickets(LocalDateTime.now()).size() > 0) {
+                    this.addKidToVipQueue(kid);
+                } else {
+                    this.addKidToMainQueue(kid);
+                }
+            }
         }
     }
 
@@ -99,7 +116,12 @@ public class Playsite {
         this.mainQueue.add(kid);
     }
 
-    public void leaveBy(Kid kid){
+    public void addKidToVipQueue(Kid kid) {
+        this.vipQueue.add(kid);
+    }
+
+    public void leaveBy(Kid kid) throws InterruptedException { //TODO error messige when trying to leave with a kid that is not in playsite!!
+        TimeUnit.SECONDS.sleep(1);
         // Kid leaves the playsite
         KidInPlaysite kidInPlaysite = this.getKidInPlaysite().stream()
                 .filter(row -> row.getKid() == kid && row.getPlaysite() == this && row.getEndTime() == null)
@@ -110,11 +132,38 @@ public class Playsite {
 
         // New kid comes to playsite (if there is a queue)
         if (this.currentKidCount < this.maxAllowedKidCount) {
-            if (!mainQueue.isEmpty()) {
+            if (letVip && !vipQueue.isEmpty()) {
+                Kid nextKid = vipQueue.poll();
+                this.attendBy(nextKid);
+                this.letVip = false;
+                this.nonVipCounter = 0;
+                var ticket = nextKid.getValidVipTickets(LocalDateTime.now()).stream()
+                        .findFirst()
+                        .get(); // TODO: different times can be used!!!
+                ticket.setNumberOfTimesVIP(ticket.getNumberOfTimesVIP() - 1);
+            }
+            else if (!mainQueue.isEmpty()) {
+                if (!this.letVip && !vipQueue.isEmpty()) {
+                    this.nonVipCounter += 1;
+                    if (this.nonVipCounter >= this.nonVipThreshold) {
+                        this.letVip = true;
+                    }
+                }
                 Kid nextKid = mainQueue.poll();
                 this.attendBy(nextKid);
             }
         }
+    }
+
+    public void getTotalVisitorCountPerDay() {
+        Map<LocalDate, Long> dateToSumMap = this.getKidInPlaysite().stream()
+                        .collect(Collectors.groupingBy(d -> d.getStartTime().toLocalDate(), Collectors.counting()));
+
+        // iterate the map to get the output
+        System.out.println(this.getType());
+        dateToSumMap.forEach((k, v) -> {
+            System.out.println("Date = " + k + " , Total visitor count = " + v);
+        });
     }
 
     @Override

@@ -54,6 +54,10 @@ public class Ticket {
         this.validTo = validTo;
     }
 
+    public Boolean isValidAt(LocalDateTime time) {
+       return this.getValidFrom().isBefore(time) && this.getValidTo().isAfter(time);
+    }
+
     public Integer getNumberOfTimesVIP() {
         return numberOfTimesVIP;
     }
