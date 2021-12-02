@@ -4,8 +4,12 @@ import com.example.playgroundmanager.domain.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -17,78 +21,114 @@ public class BootStrapData implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        System.out.println("Started in Bootstrap");
+        //todo test with can wait false???
 
-        Kid eric = new Kid("Eric", "Evans", true);
+
+        //TEST case 1
+
+        // Kids
+        var kidList =  new ArrayList<>(List.of(
+            new Kid("Eric", "Evans", true),
+            new Kid("Anna", "Smith", true),
+            new Kid("John", "Doe", true),
+            new Kid("Jonathan", "Smith", true),
+            new Kid("Katherine", "Alison", true),
+            new Kid("Peter", "Luis", true),
+            new Kid("Lucy", "Anthony", true),
+            new Kid("Bob", "Miller", true)));
+
+        Playsite slide = new Playsite(PlaysiteType.SLIDE, 1, 1);
+
+        // Eric tries to attend SLIDE without a ticket
+        slide.attendBy(kidList.get(0));
+
+        // Ticket validity time
         LocalDateTime timeValidFrom = LocalDateTime.now();
         LocalDateTime timeValidTo = LocalDateTime.now().truncatedTo(ChronoUnit.DAYS).plusDays(1).minusMinutes(1);
 
-        Ticket ticket = new Ticket(timeValidFrom, timeValidTo, 5, TicketType.INCLUDE_ALL);
+        var ticketList = new ArrayList<Ticket>();
+        for (int i = 0; i < kidList.size(); i++) {
+            ticketList.add(new Ticket(timeValidFrom, timeValidTo, 0, TicketType.INCLUDE_ALL));
+            if (i >= kidList.size() - 2) { // Last two kids will have VIP tickets
+                ticketList.get(i).setNumberOfTimesVIP(5);
+            }
 
+            // Create kid-to-ticket relationship
+            kidList.get(i).getTickets().add(ticketList.get(i));
+            ticketList.get(i).setKid(kidList.get(i));
 
-        eric.getTickets().add(ticket);
-        ticket.setKid(eric);
-
-        Playsite slide = new Playsite(PlaysiteType.SLIDE, 1, 1); //where do i change the current value?
-        Playsite carousel = new Playsite(PlaysiteType.CAROUSEL, 20, 1); //where do i change the current value?
-        Playsite ballPit = new Playsite(PlaysiteType.BALL_PIT, 8, 1); //where do i change the current value?
-        //List<Playsite> playsites = Arrays.asList(slide, carousel, ballPit);
-        List<Playsite> playsites = Arrays.asList(carousel, ballPit);
-
-        //eric
-        for (int i = 0; i < playsites.size(); i++) {
-            KidInPlaysite kinInPlaysite = new KidInPlaysite();
-            kinInPlaysite.setKid(eric);
-            eric.getKidInPlaysite().add(kinInPlaysite);
-            kinInPlaysite.setPlaysite(playsites.get(i));
-            playsites.get(i).getKidInPlaysite().add(kinInPlaysite);
-            kinInPlaysite.setStartTime(LocalDateTime.now().plusMinutes((long)i * 5));
-            kinInPlaysite.setEndTime(LocalDateTime.now().plusMinutes((long)i * 5 + 5));
-            //carousel.setCurrentKidCount(0);
-            Integer currentCount = playsites.get(i).getCurrentKidCount();
-            playsites.get(i).setCurrentKidCount(++currentCount); //this logic wont work!!!!!!!!!!!!!!!!!!!!
+            //  Kids go to SLIDE
+            slide.attendBy(kidList.get(i));//TODO need to put some WAITS?
         }
 
+        var correctOrderOfKidsInQueue = new ArrayList<>(
+                List.of("Lucy", "Anna", "John", "Jonathan", "Bob", "Katherine", "Peter")); // NVNNNVNN
+
+        var actualOrderOfKidsInQueue = new ArrayList<>();
+
+        for (int i = 0; i < kidList.size() - 1; i++) {
+            actualOrderOfKidsInQueue.add(slide.getNextKidFromQueue().getFirstName());
+        }
+        System.out.println(correctOrderOfKidsInQueue);
+        System.out.println(actualOrderOfKidsInQueue);
+        //TODO assert
 
 
-        Kid anna = new Kid("Anna", "Smith", true);
-        timeValidFrom = LocalDateTime.now();
-        timeValidTo = LocalDateTime.now().plusDays(1).minusSeconds(1);
-        ticket = new Ticket(timeValidFrom, timeValidTo, 0, TicketType.INCLUDE_ALL);
-        anna.getTickets().add(ticket);
-        ticket.setKid(anna);
+        //TEST case 2
 
-        Kid john = new Kid("John", "Doe", false);
-        timeValidFrom = LocalDateTime.now();
-        timeValidTo = LocalDateTime.now().plusDays(1).minusSeconds(1);
-        ticket = new Ticket(timeValidFrom, timeValidTo, 5, TicketType.INCLUDE_ALL);
-        john.getTickets().add(ticket);
-        ticket.setKid(john);
 
-        slide.attendBy(eric);
-        slide.attendBy(anna);
-        slide.attendBy(john);
+        Playsite carousel = new Playsite(PlaysiteType.CAROUSEL, 20, 5);
+        Playsite ballPit = new Playsite(PlaysiteType.BALL_PIT, 8, 1);
+        Playsite doubleSwings = new Playsite(PlaysiteType.DOUBLE_SWINGS, 2, 2);
+        slide = new Playsite(PlaysiteType.SLIDE, 1, 1);
+        List<Playsite> playsites = Arrays.asList(carousel, ballPit, doubleSwings, slide);
 
-        var q = slide.getMainQueue();
-        for(Kid kid : q) {
-            System.out.println("I'm in queue: " + kid.getFirstName());
+        // Kids initialized before
+
+        var theDate = LocalDate.of(2021, 11, 1);
+        timeValidFrom = LocalDateTime.of(theDate, LocalTime.of(10,0));
+        timeValidTo = LocalDateTime.of(theDate, LocalTime.of(20,0));
+
+        ticketList = new ArrayList<Ticket>();
+        for (int i = 0; i < kidList.size(); i++) {
+            ticketList.add(new Ticket(timeValidFrom, timeValidTo, 0, TicketType.INCLUDE_ALL));
+            if (i >= kidList.size() - 2) { // Last two kids will have VIP tickets
+                ticketList.get(i).setNumberOfTimesVIP(5);
+            }
+
+            // Create kid-to-ticket relationship
+            kidList.get(i).getTickets().add(ticketList.get(i));
+            ticketList.get(i).setKid(kidList.get(i));
+
+            // Create kid-to-playsite relationship
+            for (int j = 0; j < playsites.size(); j++) {
+                KidInPlaysite kidInPlaysite = new KidInPlaysite();
+                kidInPlaysite.setKid(kidList.get(i));
+                kidList.get(i).getKidInPlaysite().add(kidInPlaysite);
+                kidInPlaysite.setPlaysite(playsites.get(j));
+                playsites.get(j).getKidInPlaysite().add(kidInPlaysite);
+                kidInPlaysite.setStartTime(timeValidFrom.plusMinutes((long)j * i * 5));
+                kidInPlaysite.setEndTime(timeValidFrom.plusMinutes((long)j * i * 5 + (long)5 * j));
+            }
         }
 
-        slide.leaveBy(eric);
-        q = slide.getMainQueue();
-        for(Kid kid : q) {
-            System.out.println("I'm in queue: " + kid.getFirstName());
+        for (Kid kid : kidList) {
+            kid.getHistory(); //todo add date
         }
 
-        slide.leaveBy(anna);
-        q = slide.getMainQueue();
-        for(Kid kid : q) {
-            System.out.println("I'm in queue: " + kid.getFirstName());
+        for (Playsite playsite : playsites) {
+            playsite.getTotalVisitorCountPerDay();
         }
 
+        // working hours of the playground
 
-        System.out.println("Started in Bootstrap");
-        eric.getHistory();
-        anna.getHistory();
-        john.getHistory();
+        Integer timeIntervalInMinutes = 60;
+        LocalTime startTime = LocalTime.of(10,0);
+        LocalTime endTime = LocalTime.of(20,0);
+
+        for (Playsite playsite : playsites) {
+            playsite.getUtilizationSnapshot(theDate, startTime, endTime, timeIntervalInMinutes);
+        }
     }
 }
