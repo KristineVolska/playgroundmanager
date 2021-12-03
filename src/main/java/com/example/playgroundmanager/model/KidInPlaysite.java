@@ -1,4 +1,4 @@
-package com.example.playgroundmanager.domain;
+package com.example.playgroundmanager.model;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -14,6 +14,15 @@ public class KidInPlaysite {
 
     public KidInPlaysite() {
         this.id = System.identityHashCode(this);
+    }
+
+    public KidInPlaysite(Kid kid, Playsite playsite, LocalDateTime startTime, LocalDateTime endTime) {
+        this.id = System.identityHashCode(this);
+        this.kid = kid;
+        this.playsite = playsite;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.timeSpent = this.getTimeSpent();
     }
 
     public Kid getKid() {
@@ -55,7 +64,14 @@ public class KidInPlaysite {
     }
 
     public Duration getTimeSpent() {
-        return timeSpent;
+        if (this.timeSpent != null) {
+            return this.timeSpent;
+        } else {
+            if(this.startTime != null && this.endTime != null) {
+                return Duration.between(this.startTime, this.endTime);
+            }
+        }
+        return null;
     }
 
     private void _setTimeSpent(Duration timeSpent) {

@@ -1,4 +1,4 @@
-package com.example.playgroundmanager.domain;
+package com.example.playgroundmanager.model;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -90,8 +90,6 @@ public class Ticket {
                 ", validTo=" + validTo +
                 ", numberOfTimesVIP=" + numberOfTimesVIP +
                 ", type=" + type +
-                ", playsiteTypes=" + playsiteTypes +
-                ", kid=" + kid +
                 '}';
     }
 
