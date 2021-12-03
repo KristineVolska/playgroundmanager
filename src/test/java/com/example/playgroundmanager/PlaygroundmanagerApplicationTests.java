@@ -23,7 +23,6 @@ class PlaygroundmanagerApplicationTests {
 	@Test
 	void testVipMechanism() {
 		var kidList =  new Utils().getKids();
-		LocalTime playgroundWorkHoursEnd = LocalTime.of(23, 0); // Should be stored as a global app property
 
 		Playsite slide = new Playsite(PlaysiteType.SLIDE, 1, 1);
 
